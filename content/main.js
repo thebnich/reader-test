@@ -87,15 +87,13 @@ Driver.prototype = {
   checkReadability: function (url, td1, td2, td3, td4) {
     function getReadability(doc) {
       let uri = Services.io.newURI(doc.location, null, null);
-      let clone = doc.cloneNode(true);
-      return new Readability(uri, clone);
+      return new Readability(uri, doc);
     }
 
-    function updateRowColor() {
+    function updateCheckColor() {
       if (td1.textContent && td3.textContent) {
-        let bg;
-        bg = (td1.textContent == td3.textContent) ? "#4b6" : "b64";
-        td1.parentNode.style.backgroundColor = bg;
+        let bg = (td1.textContent == td3.textContent) ? "#4b6" : "b64";
+        td3.style.backgroundColor = bg;
       }
     }
     
@@ -105,7 +103,7 @@ Driver.prototype = {
       let readability = getReadability(doc);
       td1.textContent = readability.parse() != null;
       td2.textContent = (Date.now() - start);
-      updateRowColor();
+      updateCheckColor();
       fullBrowser.remove();
     });
 
@@ -115,7 +113,7 @@ Driver.prototype = {
       let readability = getReadability(doc);
       td3.textContent = readability.check();
       td4.textContent = (Date.now() - start);
-      updateRowColor();
+      updateCheckColor();
       strippedBrowser.remove();
     });
 
