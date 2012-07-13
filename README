@@ -1,1 +1,5 @@
-To use, symlink Readability.js from your source to the content/ directory
+Before running:
+  * symlink Readability.js from your source to the content/ directory.
+  * set path to xulrunner executable in run.sh
+
+Run with run.sh
