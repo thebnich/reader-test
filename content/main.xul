@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://readability/skin/style.css" type="text/css"?>
+
+<window id="main" title="Readability Test" width="1000" height="800" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <iframe flex="1" id="frame" src="chrome://readability/content/main.html"/>
+  <script type="application/javascript" src="chrome://readability/content/main.js"/>
+</window>
+
