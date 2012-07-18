@@ -1,0 +1,10 @@
+[App]
+Vendor=Mozilla
+Name=ReaderMode
+Version=1.0
+BuildID=%build%
+ID=readability-test@mozilla.org
+
+[Gecko]
+MinVersion=10
+MaxVersion=*
