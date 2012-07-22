@@ -76,6 +76,7 @@ Driver.prototype = {
   loadTestPages: function (callback) {
     let xhr = new XMLHttpRequest();
     xhr.open("GET", this.url, true);
+    xhr.overrideMimeType("application/json");
     xhr.addEventListener("readystatechange", function () {
       if (xhr.readyState == 4) {
         callback(JSON.parse(xhr.responseText));
@@ -101,20 +102,24 @@ Driver.prototype = {
     fullBrowser.onLoad(function (doc) {
       let start = Date.now();
       let readability = getReadability(doc);
-      td1.textContent = readability.parse() != null;
-      td2.textContent = (Date.now() - start);
-      updateCheckColor();
-      fullBrowser.remove();
+      readability.parse(function (result) {
+        td2.textContent = (Date.now() - start);
+        td1.textContent = (result != null);
+        updateCheckColor();
+        fullBrowser.remove();
+      });
     });
 
     let strippedBrowser = new StrippedBrowser();
     strippedBrowser.onLoad(function (doc) {
       let start = Date.now();
       let readability = getReadability(doc);
-      td3.textContent = readability.check();
-      td4.textContent = (Date.now() - start);
-      updateCheckColor();
-      strippedBrowser.remove();
+      readability.check(function (result) {
+        td4.textContent = (Date.now() - start);
+        td3.textContent = result;
+        updateCheckColor();
+        strippedBrowser.remove();
+      });
     });
 
     fullBrowser.loadURI(url);
