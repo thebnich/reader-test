@@ -8,7 +8,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 // Lazily-loaded browser scripts:
 [
-  ["Readability", "chrome://readability/content/Readability.js"],
   ["UserAgent", "chrome://readability/content/UserAgent.js"]
 ].forEach(function (aScript) {
   let [name, script] = aScript;
@@ -88,7 +87,33 @@ Driver.prototype = {
   checkReadability: function (url, td1, td2, td3, td4) {
     function getReadability(doc) {
       let uri = Services.io.newURI(doc.location, null, null);
-      return new Readability(uri, doc);
+      let worker = new ChromeWorker("worker.js");
+
+      let jURI = JSON.stringify(uri);
+      let s = new XMLSerializer();
+      return {
+        check: function (callback) {
+          dump("posting check...\n");
+          worker.onmessage = function (msg) {
+            callback(msg.data);
+          };
+          worker.postMessage({
+            action: "check",
+            uri: jURI,
+            xml: s.serializeToString(doc)
+          });
+        },
+        parse: function (callback) {
+          worker.onmessage = function (msg) {
+            callback(msg.data);
+          };
+          worker.postMessage({
+            action: "parse",
+            uri: jURI,
+            xml: s.serializeToString(doc)
+          });
+        }
+      };
     }
 
     function updateCheckColor() {
