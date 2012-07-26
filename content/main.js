@@ -130,6 +130,17 @@ Driver.prototype = {
       readability.parse(function (result) {
         td2.textContent = (Date.now() - start);
         td1.textContent = (result != null);
+        if (result != null) {
+          td1.innerHTML = '<a href="#">' + td1.textContent + "</a>";
+          td1.onclick = function () {
+            var doc = document.getElementById("preview").contentDocument;
+            var body = doc.body;
+            body.innerHTML = result.content;
+            var title = doc.createElement("h1");
+            title.textContent = result.title;
+            body.insertBefore(title, body.firstChild);
+          };
+        }
         updateCheckColor();
         fullBrowser.remove();
       });
@@ -137,6 +148,7 @@ Driver.prototype = {
 
     let strippedBrowser = new StrippedBrowser();
     strippedBrowser.onLoad(function (doc) {
+      return;
       let start = Date.now();
       let readability = getReadability(doc);
       readability.check(function (result) {
