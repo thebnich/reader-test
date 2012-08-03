@@ -84,38 +84,34 @@ Driver.prototype = {
     xhr.send();
   },
 
-  checkReadability: function (url, td1, td2, td3, td4) {
-    function getReadability(doc) {
-      let uri = Services.io.newURI(doc.location, null, null);
-      let worker = new ChromeWorker("worker.js");
+  _parseInWorker: function Reader_parseInWorker(uri, doc, callback) {
+    let worker = new ChromeWorker("readerWorker.js");
+    worker.onmessage = function (evt) {
+      callback(evt.data);
+    };
 
-      let jURI = JSON.stringify(uri);
-      let s = new XMLSerializer();
-      return {
-        check: function (callback) {
-          dump("posting check...\n");
-          worker.onmessage = function (msg) {
-            callback(msg.data);
-          };
-          worker.postMessage({
-            action: "check",
-            uri: jURI,
-            xml: s.serializeToString(doc)
-          });
-        },
-        parse: function (callback) {
-          worker.onmessage = function (msg) {
-            callback(msg.data);
-          };
-          worker.postMessage({
-            action: "parse",
-            uri: jURI,
-            xml: s.serializeToString(doc)
-          });
-        }
-      };
+    let pathBase;
+    try {
+      pathBase = Services.io.newURI(".", null, uri);
+    } catch (e) {
+      dump("Reader: could not get pathBase: " + e);
     }
 
+    let uriStr = JSON.stringify({
+      spec: uri.spec,
+      host: uri.host,
+      prePath: uri.prePath,
+      scheme: uri.scheme,
+      pathBase: pathBase
+    });
+
+    worker.postMessage({
+      uri: uriStr,
+      doc: new XMLSerializer().serializeToString(doc)
+    });
+  },
+
+  checkReadability: function (url, td1, td2, td3, td4) {
     function updateCheckColor() {
       if (td1.textContent && td3.textContent) {
         let bg = (td1.textContent == td3.textContent) ? "#4b6" : "b64";
@@ -124,10 +120,11 @@ Driver.prototype = {
     }
     
     let fullBrowser = new Browser();
+    let uri = Services.io.newURI(url, null, null);
+
     fullBrowser.onLoad(function (doc) {
       let start = Date.now();
-      let readability = getReadability(doc);
-      readability.parse(function (result) {
+      this._parseInWorker(uri, doc, function (result) {
         td2.textContent = (Date.now() - start);
         td1.textContent = (result != null);
         if (result != null) {
@@ -144,7 +141,7 @@ Driver.prototype = {
         updateCheckColor();
         fullBrowser.remove();
       });
-    });
+    }.bind(this));
 
     let strippedBrowser = new StrippedBrowser();
     strippedBrowser.onLoad(function (doc) {
