@@ -92,21 +92,19 @@ Driver.prototype = {
 
     let pathBase;
     try {
-      pathBase = Services.io.newURI(".", null, uri);
+      pathBase = Services.io.newURI(".", null, uri).spec
     } catch (e) {
       dump("Reader: could not get pathBase: " + e);
     }
 
-    let uriStr = JSON.stringify({
-      spec: uri.spec,
-      host: uri.host,
-      prePath: uri.prePath,
-      scheme: uri.scheme,
-      pathBase: pathBase
-    });
-
     worker.postMessage({
-      uri: uriStr,
+      uri: {
+        spec: uri.spec,
+        host: uri.host,
+        prePath: uri.prePath,
+        scheme: uri.scheme,
+        pathBase: pathBase
+      },
       doc: new XMLSerializer().serializeToString(doc)
     });
   },
