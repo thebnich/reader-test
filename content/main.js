@@ -112,14 +112,17 @@ Driver.prototype = {
         td2.textContent = (Date.now() - start);
         td1.textContent = (result != null);
         if (result != null) {
-          td1.innerHTML = '<a href="#">' + td1.textContent + "</a>";
-          td1.onclick = function () {
+          td1.parentNode.onclick = function () {
             var doc = document.getElementById("preview").contentDocument;
-            var body = doc.body;
-            body.innerHTML = result.content;
-            var title = doc.createElement("h1");
-            title.textContent = result.title;
-            body.insertBefore(title, body.firstChild);
+            var elems = document.getElementById("frame").contentDocument.getElementsByTagName("tr");
+            for (let i = 0; i < elems.length; i++) {
+              elems[i].style.backgroundColor = "";
+            }
+            td1.parentNode.style.backgroundColor = "#abc";
+            var header = doc.getElementById("reader-header");
+            var content = doc.getElementById("reader-content");
+            content.innerHTML = result.content;
+            header.textContent = result.title;
           };
         }
         fullBrowser.remove();
