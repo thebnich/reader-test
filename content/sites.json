@@ -49,7 +49,7 @@
     "http://duckduckgo.com/?q=mozilla",
     "https://mobile.twitter.com/session/new",
     "http://www.nintendo.com/countryselector",
-    "news.ycombinator.com/?foo=bar",
+    "http://news.ycombinator.com/?foo=bar",
     "http://wikipedia.org/?foo=bar",
     "http://www.cnn.com/?foo=bar",
     "http://www.microsoft.com/en-us/default.aspx",
