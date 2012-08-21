@@ -23,39 +23,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 let ua = new UserAgent("Mozilla/5.0 (Android; Mobile; rv:15.0) Gecko/15.0 Firefox/15.0");
 ua.override();
 
-var Browser = function () {
-  const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-  let browser = document.createElementNS(XUL_NS, "browser");
-  browser.setAttribute("type", "content");
-  document.documentElement.appendChild(browser);
-  this._browser = browser;
-};
-
-Browser.prototype = {
-  onLoad: function (callback) {
-    this._browser.addEventListener("DOMContentLoaded", function (evt) {
-      let doc = evt.originalTarget;
-
-      if (doc.location == "about:blank")
-        return;
-
-      // ignore on frames
-      if (doc.defaultView != this._browser.contentWindow)
-        return;
-
-      callback(doc);
-    }.bind(this));
-  },
-
-  loadURI: function (url) {
-    this._browser.loadURI(url, null, null);
-  },
-
-  remove: function () {
-    this._browser.parentNode.removeChild(this._browser);
-  }
-};
-
 let Driver = function (url) {
   this.url = url;
 };
@@ -120,33 +87,35 @@ Driver.prototype = {
   },
 
   checkReadability: function (url, td1, td2) {
-    let fullBrowser = new Browser();
-    let uri = Services.io.newURI(url, null, null);
-
-    fullBrowser.onLoad(function (doc) {
-      this._parseInWorker(uri, doc, function (result) {
-        let article = result.article;
-        td2.textContent = result.time;
-        td1.textContent = (article != null);
-        if (article != null) {
-          td1.parentNode.onclick = function () {
-            var doc = document.getElementById("preview").contentDocument;
-            var elems = document.getElementById("frame").contentDocument.getElementsByTagName("tr");
-            for (let i = 0; i < elems.length; i++) {
-              elems[i].style.backgroundColor = "";
-            }
-            td1.parentNode.style.backgroundColor = "#abc";
-            var header = doc.getElementById("reader-header");
-            var content = doc.getElementById("reader-content");
-            content.innerHTML = article.content;
-            header.textContent = article.title;
-          };
-        }
-        fullBrowser.remove();
-      });
-    }.bind(this));
-
-    fullBrowser.loadURI(url);
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState == 4) {
+        let uri = Services.io.newURI(url, null, null);
+        let p = new DOMParser();
+        let doc = p.parseFromString(xhr.responseText, "text/html");
+        this._parseInWorker(uri, doc, function (result) {
+          let article = result.article;
+          td2.textContent = result.time;
+          td1.textContent = (article != null);
+          if (article != null) {
+            td1.parentNode.onclick = function () {
+              var doc = document.getElementById("preview").contentDocument;
+              var elems = document.getElementById("frame").contentDocument.getElementsByTagName("tr");
+              for (let i = 0; i < elems.length; i++) {
+                elems[i].style.backgroundColor = "";
+              }
+              td1.parentNode.style.backgroundColor = "#abc";
+              var header = doc.getElementById("reader-header");
+              var content = doc.getElementById("reader-content");
+              content.innerHTML = article.content;
+              header.textContent = article.title;
+            };
+          }
+        });
+      }
+    }.bind(this);
+    xhr.send();
   }
 };
 
