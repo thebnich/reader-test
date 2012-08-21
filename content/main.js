@@ -90,13 +90,30 @@ Driver.prototype = {
     };
   },
 
+  _id: 0,
+  
+  _callbacks: {},
+
+  _getWorker: function () {
+    if (!this._worker) {
+      this._worker = new ChromeWorker("readerWorker.js");
+      this._worker.onmessage = function (evt) {
+        let id = evt.data.id;
+        this._callbacks[id](evt.data);
+        delete this._callbacks[id];
+      }.bind(this);
+    }
+
+    return this._worker;
+  },
+
   _parseInWorker: function Reader_parseInWorker(uri, doc, callback) {
-    let worker = new ChromeWorker("readerWorker.js");
-    worker.onmessage = function (evt) {
-      callback(evt.data);
-    };
+    let worker = this._getWorker();
+    let id = ++this._id;
+    this._callbacks[id] = callback;
 
     worker.postMessage({
+      id: id,
       uri: this.getReaderURI(uri),
       doc: new XMLSerializer().serializeToString(doc)
     });
@@ -107,11 +124,11 @@ Driver.prototype = {
     let uri = Services.io.newURI(url, null, null);
 
     fullBrowser.onLoad(function (doc) {
-      let start = Date.now();
       this._parseInWorker(uri, doc, function (result) {
-        td2.textContent = (Date.now() - start);
-        td1.textContent = (result != null);
-        if (result != null) {
+        let article = result.article;
+        td2.textContent = result.time;
+        td1.textContent = (article != null);
+        if (article != null) {
           td1.parentNode.onclick = function () {
             var doc = document.getElementById("preview").contentDocument;
             var elems = document.getElementById("frame").contentDocument.getElementsByTagName("tr");
@@ -121,8 +138,8 @@ Driver.prototype = {
             td1.parentNode.style.backgroundColor = "#abc";
             var header = doc.getElementById("reader-header");
             var content = doc.getElementById("reader-content");
-            content.innerHTML = result.content;
-            header.textContent = result.title;
+            content.innerHTML = article.content;
+            header.textContent = article.title;
           };
         }
         fullBrowser.remove();
