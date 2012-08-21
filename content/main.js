@@ -126,10 +126,14 @@ Driver.prototype = {
     fullBrowser.onLoad(function (doc) {
       this._parseInWorker(uri, doc, function (result) {
         let article = result.article;
+        let tr = td1.parentNode;
+        let readable = article != null;
+        let expected = tr.className == "readable";
         td2.textContent = result.time;
-        td1.textContent = (article != null);
+        td1.textContent = (readable ? "yes" : "no");
+        td1.style.color = (readable == expected ? "#5a6" : "#a65");
         if (article != null) {
-          td1.parentNode.onclick = function () {
+          tr.onclick = function () {
             var doc = document.getElementById("preview").contentDocument;
             var elems = document.getElementById("frame").contentDocument.getElementsByTagName("tr");
             for (let i = 0; i < elems.length; i++) {
@@ -152,25 +156,35 @@ Driver.prototype = {
 
 window.addEventListener("load", function () {
   let driver = new Driver("chrome://readability/content/sites.json");
-  driver.loadTestPages(function (urls) {
+  driver.loadTestPages(function (data) {
+    function checkURLs(urls, className) {
+      for (let i = 0; i < urls.length; i++) {
+        let url = urls[i];
+        let tr = frame.contentDocument.createElement("tr");
+        tr.className = className;
+        table.appendChild(tr);
+
+        let siteTd = frame.contentDocument.createElement("td");
+        tr.appendChild(siteTd);
+        siteTd.textContent = url;
+
+        let td1 = frame.contentDocument.createElement("td");
+        tr.appendChild(td1);
+        let td2 = frame.contentDocument.createElement("td");
+        tr.appendChild(td2);
+
+        driver.checkReadability(url, td1, td2);
+      }
+    }
+
     let frame = document.getElementById("frame");
     let table = frame.contentDocument.getElementById("results");
-    for (let i = 0; i < urls.length; i++) {
-      let url = urls[i];
-      let tr = frame.contentDocument.createElement("tr");
-      table.appendChild(tr);
 
-      let siteTd = frame.contentDocument.createElement("td");
-      tr.appendChild(siteTd);
-      siteTd.textContent = url;
+    // Pages that should be parseable
+    checkURLs(data.readable, "readable");
 
-      let td1 = frame.contentDocument.createElement("td");
-      tr.appendChild(td1);
-      let td2 = frame.contentDocument.createElement("td");
-      tr.appendChild(td2);
-
-      driver.checkReadability(url, td1, td2);
-    }
+    // Pages that should not be parseable
+    checkURLs(data.unreadable, "unreadable");
   });
 }, false);
 
